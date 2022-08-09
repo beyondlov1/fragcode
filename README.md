@@ -1,7 +1,38 @@
-# Vue 3 + Vite
+# FragCode
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+## description
+用简写记录代码片段, 用于快速搜索, 复制   
 
-## Recommended IDE Setup
+使用技术:```Vue3 + tauri + sqlite ```
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+## feature
+- 添加
+```
+add fc hello, fragcode
+```
+- 搜索
+```
+fc
+```
+- 占位符替换
+```
+add fcc hello, $1, $2
+fcc fragcode world
+
+-> hello, fragcode, world
+
+just like shell
+```
+- 复制
+```
+Press Enter/Return
+```
+- 清空
+```
+Ctrl+z
+```
+
+### TODO
+- 想办法快速打开
+- 想办法复制后关闭
+- 如果能做到 rofi 那样就好了
