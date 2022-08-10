@@ -4,6 +4,7 @@ import { invoke } from '@tauri-apps/api'
 import { writeText, readText } from '@tauri-apps/api/clipboard';
 import { ElTable } from 'element-plus'
 import { exit } from '@tauri-apps/api/process';
+import { register } from '@tauri-apps/api/globalShortcut';
 
 
 const input = ref('')
@@ -68,6 +69,7 @@ function onenter(value){
       writeText(selectedRow["code"]);
       input.value = "";
       oninputchange(input.value);
+      invoke("toggle")
     }
   }
 }
@@ -103,6 +105,11 @@ document.onkeydown = function(e) {
     input.value = ""
   }
 }
+
+
+register('Ctrl+Space', () => {
+  invoke("toggle")
+});
 
 setInterval(focusInput, 1000);
 

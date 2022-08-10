@@ -10,7 +10,7 @@ use serde_json::Result;
 use rusqlite::{ Connection};
 use std::path::{Path, PathBuf};
 use std::fs;
-
+use tauri::{SystemTray,SystemTrayMenu, SystemTraySubmenu,SystemTrayEvent, SystemTrayMenuItem, CustomMenuItem,AppHandle,Manager,GlobalShortcutManager};
 
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -85,7 +85,7 @@ fn selectbyname(conn: &Connection, name:&str)->rusqlite::Result<Vec<FragCode>>{
 }
 
 fn selectall(conn: &Connection)->rusqlite::Result<Vec<FragCode>>{
-  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code")?;
+  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code order by id desc")?;
   let data_iter = stmt.query_map([], |row| {
       Ok(FragCode {
           id: row.get(0)?,
@@ -141,13 +141,82 @@ fn remove(id: &str){
   conn.close();
 }
 
+
+
+#[tauri::command]
+fn toggle(app: AppHandle){
+  let window = app.get_window("main").unwrap();
+  if window.is_visible().unwrap(){
+    window.hide().unwrap();
+  }else{
+    window.show().unwrap();
+  }
+}
+
+fn handler(app: &AppHandle, event: SystemTrayEvent) {
+  // 获取应用窗口
+  let window = app.get_window("main").unwrap();
+  let parent_window = Some(&window);
+  // 匹配点击事件
+  match event {
+      // 左键点击
+      SystemTrayEvent::LeftClick {
+          position: _,
+          size: _,
+          ..
+      } => {
+          println!("system tray received a left click");
+      }
+      // 右键点击
+      SystemTrayEvent::RightClick {
+          position: _,
+          size: _,
+          ..
+      } => {
+          println!("system tray received a right click");
+      }
+      // 双击，macOS / Linux 不支持
+      SystemTrayEvent::DoubleClick {
+          position: _,
+          size: _,
+          ..
+      } => {
+          println!("system tray received a double click");
+      }
+      // 根据菜单 id 进行事件匹配
+      SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+          "quit" => {
+            std::process::exit(0);
+          }
+          "show" => {
+            window.set_always_on_top(true).unwrap();
+            window.show().unwrap();
+          }
+          "hide" => {
+            window.hide().unwrap();
+          }
+          _ => {}
+      },
+      _ => {}
+  }
+}
+
 fn main() {
   let conn = connect();
   createtable(&conn).unwrap();
   conn.close();
 
+
+  let traymenu = SystemTrayMenu::new()
+  .add_item(CustomMenuItem::new("hide".to_string(), "Hide"))
+  .add_item(CustomMenuItem::new("show".to_string(), "Show"))
+  .add_native_item(SystemTrayMenuItem::Separator)
+  .add_item(CustomMenuItem::new("quit".to_string(), "Quit"));
+
   tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![list, add, remove])
+    .system_tray(SystemTray::new().with_menu(traymenu))
+    .on_system_tray_event(handler)
+    .invoke_handler(tauri::generate_handler![list, add, remove, toggle])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
