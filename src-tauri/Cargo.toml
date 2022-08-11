@@ -18,7 +18,8 @@ tauri-build = { version = "1.0.4", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 tauri = { version = "1.0.5", features = ["api-all", "system-tray"] }
-rusqlite = "0.28.0"
+# 内置sqlite, 防止windows报找不到sqlite.dll
+rusqlite = { version = "0.28.0", features = ["bundled"] }
 lazy_static = "1.4.0"
 dirs = "4.0.0"
 
