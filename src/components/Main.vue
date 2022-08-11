@@ -46,7 +46,7 @@ function oninputchange(value){
 }
 
 function replace(str, arg, argi){
-  return str.replace("$"+argi, arg)
+  return str.replaceAll("$"+argi, arg)
 }
 
 function onenter(value){
@@ -79,6 +79,7 @@ function onrowclick(row, column, event){
   writeText(row["code"]);
   refInput.value.focus();
   refInput.value.select();
+  invoke("toggle")
 }
 
 function remove(row){
