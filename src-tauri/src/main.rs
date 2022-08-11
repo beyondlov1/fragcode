@@ -68,7 +68,7 @@ fn createtable(conn: &Connection) -> rusqlite::Result<()>{
 }
 
 fn selectbyname(conn: &Connection, name:&str)->rusqlite::Result<Vec<FragCode>>{
-  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code where abbr like ?||'%' order by id desc")?;
+  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code where abbr like ?||'%' order by abbr")?;
   let data_iter = stmt.query_map([name], |row| {
       Ok(FragCode {
           id: row.get(0)?,

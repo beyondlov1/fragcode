@@ -104,6 +104,9 @@ document.onkeydown = function(e) {
   if (e.ctrlKey && e.key == "z") {
     input.value = ""
   }
+  if (e.key == "Escape") {
+    invoke("toggle")
+  }
 }
 
 
