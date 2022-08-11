@@ -61,7 +61,8 @@
         "title": "fragcode",
         "width": 800,
         "label": "main",
-        "center": true
+        "center": true,
+        "alwaysOnTop": true
       }
     ],
     "systemTray": {
