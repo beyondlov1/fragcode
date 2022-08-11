@@ -128,7 +128,7 @@ setInterval(focusInput, 1000);
     <el-table-column prop="code" label="Code"/>
     <el-table-column width="100">
       <template v-slot:default="{row}">
-        <el-link type="primary" @click="remove(row)" >
+        <el-link type="primary" @click.stop="remove(row)" >
           <span>删除</span>
         </el-link>
       </template>
