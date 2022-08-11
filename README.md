@@ -31,6 +31,11 @@ Press Enter/Return
 ```
 Ctrl+z
 ```
+- 快速显示/隐藏快捷键
+```
+Ctrl+Space -> 显示/隐藏
+Escape -> 隐藏
+```
 
 ## build
 ```
@@ -38,6 +43,4 @@ npm run tauri build
 ```
 
 ## TODO
-- 想办法快速打开
-- 想办法复制后关闭
 - 如果能做到 rofi 那样就好了
