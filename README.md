@@ -51,4 +51,5 @@ npm run tauri build
 ```
 
 ## TODO
+- 上下切换选择
 - 如果能做到 rofi 那样就好了
