@@ -20,6 +20,20 @@ struct FragCode {
     code: String,
 }
 
+#[derive(Debug)]
+struct TableField {
+    id: i32,
+    table_name: String,
+    field_name: String,
+    field_type: i32,
+    field_default: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Count {
+    cnt: i32
+}
+
 fn connect()-> Connection{
   let home = dirs::home_dir().unwrap();
   let mut dir = PathBuf::from(home);
@@ -46,7 +60,7 @@ fn insert(conn: &Connection,v:&Vec<FragCode>) -> rusqlite::Result<()>{
   Ok(())
 }
 
-fn delete(conn: &Connection,id:&str) -> rusqlite::Result<()>{
+fn delete(conn: &Connection,id:i32) -> rusqlite::Result<()>{
   conn.execute(
     "DELETE FROM t_frag_code where id = ?1",
     [id],
@@ -63,12 +77,27 @@ fn createtable(conn: &Connection) -> rusqlite::Result<()>{
         )",
         (), // empty list of parameters.
     )?;
- 
+
+    let mut stmt = conn.prepare("SELECT count(name) FROM sqlite_master where tbl_name = 't_frag_code' and type='table' and sql like '%access_cnt%'")?;
+    let mut rs = stmt.query_map([], |row| {
+      Ok(Count{
+        cnt: row.get(0)?
+      })
+    })?;
+
+    let first = rs.next().unwrap()?;
+    let count = first.cnt;
+    if count == 0{
+      conn.execute(
+        "alter table t_frag_code add column access_cnt INTEGER NOT NULL DEFAULT 0",
+        (), // empty list of parameters.
+      )?;
+    }
     Ok(())
 }
 
 fn selectbyname(conn: &Connection, name:&str)->rusqlite::Result<Vec<FragCode>>{
-  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code where abbr like ?||'%' order by abbr")?;
+  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code where abbr like ?||'%' order by abbr asc, access_cnt desc")?;
   let data_iter = stmt.query_map([name], |row| {
       Ok(FragCode {
           id: row.get(0)?,
@@ -85,7 +114,7 @@ fn selectbyname(conn: &Connection, name:&str)->rusqlite::Result<Vec<FragCode>>{
 }
 
 fn selectall(conn: &Connection)->rusqlite::Result<Vec<FragCode>>{
-  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code order by id desc")?;
+  let mut stmt = conn.prepare("SELECT id, abbr, code FROM t_frag_code order by access_cnt desc,id desc")?;
   let data_iter = stmt.query_map([], |row| {
       Ok(FragCode {
           id: row.get(0)?,
@@ -135,13 +164,21 @@ fn add(abbr: &str, code: &str){
 
 
 #[tauri::command]
-fn remove(id: &str){
+fn remove(id: i32){
   let conn = connect();
   delete(&conn, id).unwrap();
   conn.close();
 }
 
-
+#[tauri::command]
+fn access(id: i32){
+  let conn = connect();
+  conn.execute(
+    "update t_frag_code set access_cnt = access_cnt + 1 where id = ?1",
+    [id],
+  ).unwrap();
+  conn.close();
+}
 
 #[tauri::command]
 fn toggle(app: AppHandle){
@@ -152,6 +189,7 @@ fn toggle(app: AppHandle){
     window.show().unwrap();
   }
 }
+
 
 fn handler(app: &AppHandle, event: SystemTrayEvent) {
   // 获取应用窗口
@@ -216,7 +254,7 @@ fn main() {
   tauri::Builder::default()
     .system_tray(SystemTray::new().with_menu(traymenu))
     .on_system_tray_event(handler)
-    .invoke_handler(tauri::generate_handler![list, add, remove, toggle])
+    .invoke_handler(tauri::generate_handler![list, add, remove, toggle, access])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
