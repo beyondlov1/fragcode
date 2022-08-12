@@ -36,6 +36,14 @@ Ctrl+z
 Ctrl+Space -> 显示/隐藏
 Escape -> 隐藏
 ```
+- 从其他地方复制到剪切板后, 快速添加
+```
+cp fg
+----------------------
+| Clipboard Text ... |
+----------------------
+input -> Enter / textarea -> Ctrl+Enter
+```
 
 ## build
 ```
