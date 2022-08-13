@@ -175,6 +175,32 @@ document.onkeydown = function(e) {
         return;
       }
     }
+    if(e.key == "ArrowDown"){
+      let index = 0;
+      for (let i = 0; i < tableData.value.length; i++) {
+        const item = tableData.value[i];
+        if(item["id"] == currentRow.value.id){
+          index = i;
+          break;
+        }
+      }
+      let next = index+1>=tableData.value.length?tableData.value.length-1:index+1
+      singleTableRef.value.setCurrentRow(tableData.value[next])
+      return false;
+    }
+    if(e.key == "ArrowUp"){
+      let index = 0;
+      for (let i = 0; i < tableData.value.length; i++) {
+        const item = tableData.value[i];
+        if(item["id"] == currentRow.value.id){
+          index = i;
+          break;
+        }
+      }
+      let next = index-1<0?0:index-1
+      singleTableRef.value.setCurrentRow(tableData.value[next])
+      return false;
+    }
   }
   if(refTextarea && refTextarea.value && refTextarea.value.ref == e.target ){
     if(e.ctrlKey && e.key == "Enter"){
@@ -187,7 +213,7 @@ register('Ctrl+Space', () => {
   invoke("toggle")
 });
 
-setInterval(focuslast, 1000);
+setInterval(focuslast, 500);
 
 </script>
 
