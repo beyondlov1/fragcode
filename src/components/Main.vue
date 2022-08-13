@@ -99,14 +99,18 @@ function onenter(value){
   }
 }
 
+function reset(){
+  input.value = ""
+  oninputchange("")
+}
+
 function onrowclick(row, column, event){
   console.log(row["code"])
   writeText(row["code"]);
   invoke("access", {id:row["id"]})
   refInput.value.focus();
   refInput.value.select();
-  input.value = ""
-  oninputchange("");
+  reset()
   invoke("toggle")
 }
 
@@ -153,6 +157,7 @@ function ontextareafocus(event){
 document.onkeydown = function(e) {
   
   if (e.key == "Escape") {
+    reset()
     invoke("toggle")
   }
   console.log(e.key)
