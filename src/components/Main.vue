@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { invoke } from '@tauri-apps/api'
 import { writeText, readText } from '@tauri-apps/api/clipboard';
 import { exit } from '@tauri-apps/api/process';
@@ -93,8 +93,7 @@ function onenter(value){
   if(selectedRow != null){
     writeText(selectedRow["code"]);
     invoke("access", {id:selectedRow["id"]})
-    input.value = "";
-    oninputchange(input.value);
+    reset()
     invoke("toggle")
   }
 }
@@ -102,6 +101,8 @@ function onenter(value){
 function reset(){
   input.value = ""
   oninputchange("")
+  lastfocus.value = refInput.value
+  refInput.value.focus()
 }
 
 function onrowclick(row, column, event){
@@ -117,7 +118,7 @@ function onrowclick(row, column, event){
 function remove(row){
   console.log("row"+row.id)
   invoke('remove', { id: row.id});
-  oninputchange("");
+  reset()
 }
 
 const setCurrent = (row) => {
@@ -155,15 +156,16 @@ function ontextareafocus(event){
 
 
 document.onkeydown = function(e) {
-  
   if (e.key == "Escape") {
-    reset()
     invoke("toggle")
+    reset()
+    return false;
   }
   console.log(e.key)
   if(refInput.value.ref == e.target ){
     if(e.ctrlKey && e.key == "z") {
       input.value = ""
+      oninputchange(input.value)
     }
     if(e.key == "Enter"){
       onenter(input.value)
@@ -172,7 +174,13 @@ document.onkeydown = function(e) {
       if(refTextarea && refTextarea.value != null && showclipboard.value){
         refTextarea.value.focus();
         refTextarea.value.ref.setSelectionRange(9999,9999);
-        return;
+        return false;
+      }else{
+        readText().then((x)=>{
+          input.value = input.value + " " +x;
+          oninputchange(input.value)
+        })
+        return false;
       }
     }
     if(e.key == "ArrowDown"){
@@ -205,6 +213,7 @@ document.onkeydown = function(e) {
   if(refTextarea && refTextarea.value && refTextarea.value.ref == e.target ){
     if(e.ctrlKey && e.key == "Enter"){
       onenter(input.value)
+      reset()
     }
   }
 }
@@ -212,6 +221,10 @@ document.onkeydown = function(e) {
 register('Ctrl+Space', () => {
   invoke("toggle")
 });
+
+onMounted(() => {
+  refInput.value.focus()
+})
 
 setInterval(focuslast, 500);
 
