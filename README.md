@@ -48,6 +48,12 @@ input -> Enter / textarea -> Ctrl+Enter
 ```
 焦点在输入框时  ArrowUp/ArrowDown
 ```
+- 输入框Tab键快速输入剪切板内容
+```
+fg <-TAB
+-> 
+fg CLIPBOARD_TEXT
+```
 
 ## build
 ```
