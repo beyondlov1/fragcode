@@ -7,6 +7,7 @@ import { register } from '@tauri-apps/api/globalShortcut';
 
 
 const input = ref('')
+const hint = ref('')
 const tableData = ref([])
 const refInput =ref()
 const refTextarea =ref()
@@ -54,6 +55,14 @@ function oninputchange(value){
       }
       tableData.value = r;
       setCurrent(tableData.value[0]);
+    })
+    readText().then((x)=>{
+      if(!value.endsWith(x)){
+        hint.value = value + " " + x
+      }
+      if(!value){
+        hint.value = value + " " + x;
+      }
     })
 }
 
@@ -156,7 +165,7 @@ function ontextareafocus(event){
 
 
 document.onkeydown = function(e) {
-  if (e.key == "Escape") {
+  if (e.key == "Escape" || (e.ctrlKey && e.key == "c")) {
     invoke("toggle")
     reset()
     return false;
@@ -220,6 +229,7 @@ document.onkeydown = function(e) {
 
 register('Ctrl+Space', () => {
   invoke("toggle")
+  oninputchange(input.value)
 });
 
 onMounted(() => {
@@ -231,7 +241,10 @@ setInterval(focuslast, 500);
 </script>
 
 <template>
-  <el-input ref="refInput" v-model="input" @input="oninputchange" @focus="oninputfocus" placeholder="Please input" />
+  <div>
+    <el-input ref="refHint" v-model="hint" input-style="color:#C0C0C0" style="background:transparent;z-index:0;margin-left:0;position:absolute;width:100%;margin-top:0px;color:#FF6633"/>
+    <el-input ref="refInput" v-model="input" @input="oninputchange" @focus="oninputfocus" placeholder="" />
+  </div>
   <el-input v-if="showclipboard" v-model="clipboard" ref="refTextarea" type="textarea" 
    rows="30" @focus="ontextareafocus" placeholder="Clipboard" />
   <el-table v-if="!showclipboard" :data="tableData"  :show-header=false style="width: 100%" @cell-click="onrowclick"
@@ -250,4 +263,8 @@ setInterval(focuslast, 500);
 </template>
 
 
-
+<style lang="scss">
+.el-textarea__inner,.el-input__inner, .el-input__wrapper {
+    background: transparent !important;
+}
+</style>
