@@ -57,11 +57,16 @@ function oninputchange(value){
       setCurrent(tableData.value[0]);
     })
     readText().then((x)=>{
-      if(!value.endsWith(x)){
-        hint.value = value + " " + x
+      if(keyword == "cp"){
+        hint.value = ""
+        return;
       }
       if(!value){
         hint.value = value + " " + x;
+        return;
+      }
+      if(!value.endsWith(x)){
+        hint.value = value + " " + x
       }
     })
 }
