@@ -16,6 +16,7 @@ const currentRow = ref()
 const lastfocus = ref(null)
 const showclipboard = ref(false)
 const clipboard = ref("")
+const hclipboards = ref([])
 
 oninputchange("");
 
@@ -121,8 +122,12 @@ function reset(){
 
 function onrowclick(row, column, event){
   console.log(row["code"])
-  writeText(row["code"]);
-  invoke("access", {id:row["id"]})
+  if("id" in row){
+    writeText(row["code"]);
+    invoke("access", {id:row["id"]})
+  }else{
+    writeText(row["code"]);
+  }
   refInput.value.focus();
   refInput.value.select();
   reset()
@@ -168,6 +173,58 @@ function ontextareafocus(event){
   lastfocus.value = refTextarea.value
 }
 
+const onChange = (item) => {
+  writeText(item.value)
+  reset()
+  invoke("toggle")
+}
+
+function stageclipboard() {
+  readText().then((x)=>{
+    let text = x
+    if(x.length > 16){
+      text = x.substring(0,16) + ".."
+    }
+    if(hclipboards.value){
+      let founditem = null;
+      let foundi = -1;
+      for (let i = 0; i < hclipboards.value.length; i++) {
+        const item = hclipboards.value[i];
+        if(item["code"] == x){
+          founditem = item;
+          foundi = i;
+          break;
+        }
+      }
+      if(!founditem){
+        hclipboards.value.splice(0, 0, {text:text,code:x,checked:false});
+      }else{
+        if(foundi != 0){
+          let arr = [];
+          let poped;
+          while ((poped = hclipboards.value.pop()) != founditem) {
+            arr.push(poped);
+          }
+          for (let i = arr.length - 1; i >= 0; i--) {
+            const item = arr[i];
+            hclipboards.value.push(item);
+          }
+          hclipboards.value.splice(0, 0, {text:text,code:x,checked:false})
+        }
+      }
+      if(hclipboards.value.length > 5){
+        hclipboards.value.pop();
+      }
+    }
+
+    if(!input.value.endsWith(x)){
+      hint.value = input.value + " " + x;
+    }
+    
+  }).catch((reason)=>{
+    console.log("read text error:"+reason);
+  })
+}
 
 document.onkeydown = function(e) {
   if (e.key == "Escape" || (e.ctrlKey && e.key == "c")) {
@@ -242,6 +299,7 @@ onMounted(() => {
 })
 
 setInterval(focuslast, 500);
+setInterval(stageclipboard, 1000);
 
 </script>
 
@@ -250,9 +308,20 @@ setInterval(focuslast, 500);
     <el-input ref="refHint" v-model="hint" input-style="color:#C0C0C0" style="background:transparent;z-index:0;margin-left:0;position:absolute;width:100%;margin-top:0px;color:#FF6633"/>
     <el-input ref="refInput" v-model="input" @input="oninputchange" @focus="oninputfocus" placeholder="" />
   </div>
+  <div hidden>
+    <el-check-tag v-for="(item,index) in hclipboards" :item="item"
+        :index="index"
+        :key="item.value" style="margin-right: 8px"
+        :checked="item.checked" 
+        @change="onChange(item)">{{item.text}}</el-check-tag>
+  </div>
   <el-input v-if="showclipboard" v-model="clipboard" ref="refTextarea" type="textarea" 
    rows="30" @focus="ontextareafocus" placeholder="Clipboard" />
-  <el-table v-if="!showclipboard" :data="tableData"  :show-header=false style="width: 100%" @cell-click="onrowclick"
+  <el-table v-if="!showclipboard && !input && hclipboards.length" :data="hclipboards"  :show-header=false style="width: 100%" @cell-click="onrowclick"
+  	  highlight-current-row >
+    <el-table-column prop="code" label="Code"/>
+  </el-table>
+  <el-table v-if="!showclipboard" :data="tableData" :show-header=false style="width: 100%" @cell-click="onrowclick"
   	  highlight-current-row  ref="singleTableRef" 
       @current-change="handleCurrentChange">
     <el-table-column prop="abbr" label="Abbr." width="100" />
