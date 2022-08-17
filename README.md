@@ -55,6 +55,8 @@ fg <-TAB
 fg CLIPBOARD_TEXT
 ```
 
+- 列表前5个显示历史剪切板内容, 点击复制
+
 ## build
 ```
 npm run tauri build
