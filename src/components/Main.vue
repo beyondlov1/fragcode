@@ -237,6 +237,10 @@ function stageclipboard() {
     if(x.length > 16){
       text = x.substring(0,16) + ".."
     }
+    let tabletext = x
+    if(x.length > 300){
+      tabletext = x.substring(0,300) + "..."
+    }
     let founditem = null;
     let foundi = -1;
     for (let i = 0; i < hclipboards.value.length; i++) {
@@ -248,7 +252,7 @@ function stageclipboard() {
       }
     }
     if(founditem == null){
-      hclipboards.value.splice(0, 0, {text:text,code:x,checked:false});
+      hclipboards.value.splice(0, 0, {text:text,tabletext:tabletext,code:x,checked:false});
     }else{
       if(foundi != 0){
         let arr = [];
@@ -260,7 +264,7 @@ function stageclipboard() {
           const item = arr[i];
           hclipboards.value.push(item);
         }
-        hclipboards.value.splice(0, 0, {text:text,code:x,checked: false})
+        hclipboards.value.splice(0, 0, {text:text,tabletext:tabletext,code:x,checked: false})
       }
     }
     if(hclipboards.value.length > 5){
@@ -428,7 +432,7 @@ setInterval(stageclipboard, 1000);
    rows="30" @focus="ontextareafocus" placeholder="Clipboard" />
   <el-table v-if="!showclipboard && !input && hclipboards.length" :data="hclipboards"  :show-header=false style="width: 100%" @cell-click="onrowclick"
   	  highlight-current-row >
-    <el-table-column prop="code" label="Code"/>
+    <el-table-column prop="tabletext" label="Code"/>
   </el-table>
   <el-table v-if="!showclipboard" :data="tableData" :show-header=false style="width: 100%" @cell-click="onrowclick"
   	  highlight-current-row  ref="singleTableRef" 
