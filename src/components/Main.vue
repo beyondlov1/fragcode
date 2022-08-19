@@ -18,8 +18,20 @@ const showclipboard = ref(false)
 const clipboard = ref("")
 const hclipboards = ref([])
 
-oninputchange("");
 
+function hintwith(str, ignorelist) {
+  for (let i = 0; i < ignorelist.length; i++) {
+    const ignorestr = ignorelist[i];
+    if(input.value.endsWith(ignorestr)){
+      let base = input.value.substring(0, input.value.indexOf(ignorestr));
+      hint.value = base + str;
+      return;
+    }else{
+      break;
+    }
+  }
+  hint.value = input.value + " " + str;
+}
 
 function oninputchange(value){
   console.log(value)
@@ -57,19 +69,37 @@ function oninputchange(value){
       tableData.value = r;
       setCurrent(tableData.value[0]);
     })
-    readText().then((x)=>{
-      if(keyword == "cp"){
-        hint.value = ""
-        return;
+
+    if(keyword == "cp"){
+      hint.value = ""
+      return;
+    }
+    if(hclipboards.value.length <= 0){
+      return;
+    }
+    if(value == ""){
+      hint.value = value + " " + hclipboards.value[0].code;
+      return;
+    }
+
+    // hint with typing
+    let checkedhclip = null;
+    for (let i = 0; i < hclipboards.value.length; i++) {
+      const hclip = hclipboards.value[i];
+      if(hclip.checked){
+        checkedhclip = hclip;
+        break;
       }
-      if(!value){
-        hint.value = value + " " + x;
-        return;
-      }
-      if(!value.endsWith(x)){
-        hint.value = value + " " + x
-      }
-    })
+    }
+
+    let ignorelist = []
+    if(checkedhclip != null){
+      ignorelist.push(checkedhclip.code)  
+      hintwith(checkedhclip.code, ignorelist)
+    }else{
+      hintwith(hclipboards.value[0].code, ignorelist)
+    }
+    
 }
 
 function replace(str, arg, argi){
@@ -118,6 +148,7 @@ function reset(){
   oninputchange("")
   lastfocus.value = refInput.value
   refInput.value.focus()
+  clearCheckState()
 }
 
 function onrowclick(row, column, event){
@@ -174,9 +205,8 @@ function ontextareafocus(event){
 }
 
 const onChange = (item) => {
-  writeText(item.value)
-  reset()
-  invoke("toggle")
+  input.value = input.value + " " + item.code;
+  oninputchange(input.value)
 }
 
 function stageclipboard() {
@@ -185,45 +215,62 @@ function stageclipboard() {
     if(x.length > 16){
       text = x.substring(0,16) + ".."
     }
-    if(hclipboards.value){
-      let founditem = null;
-      let foundi = -1;
-      for (let i = 0; i < hclipboards.value.length; i++) {
-        const item = hclipboards.value[i];
-        if(item["code"] == x){
-          founditem = item;
-          foundi = i;
-          break;
-        }
+    let founditem = null;
+    let foundi = -1;
+    for (let i = 0; i < hclipboards.value.length; i++) {
+      const item = hclipboards.value[i];
+      if(item["code"] == x){
+        founditem = item;
+        foundi = i;
+        break;
       }
-      if(!founditem){
-        hclipboards.value.splice(0, 0, {text:text,code:x,checked:false});
-      }else{
-        if(foundi != 0){
-          let arr = [];
-          let poped;
-          while ((poped = hclipboards.value.pop()) != founditem) {
-            arr.push(poped);
-          }
-          for (let i = arr.length - 1; i >= 0; i--) {
-            const item = arr[i];
-            hclipboards.value.push(item);
-          }
-          hclipboards.value.splice(0, 0, {text:text,code:x,checked:false})
+    }
+    if(founditem == null){
+      hclipboards.value.splice(0, 0, {text:text,code:x,checked:false});
+    }else{
+      if(foundi != 0){
+        let arr = [];
+        let poped;
+        while ((poped = hclipboards.value.pop()) != founditem) {
+          arr.push(poped);
         }
+        for (let i = arr.length - 1; i >= 0; i--) {
+          const item = arr[i];
+          hclipboards.value.push(item);
+        }
+        hclipboards.value.splice(0, 0, {text:text,code:x,checked: false})
       }
-      if(hclipboards.value.length > 5){
-        hclipboards.value.pop();
+    }
+    if(hclipboards.value.length > 5){
+      hclipboards.value.pop();
+    }
+
+    let checkedhclip = null;
+    for (let i = 0; i < hclipboards.value.length; i++) {
+      const item = hclipboards.value[i];
+      if(item.checked){
+        checkedhclip = item;
+        break;
       }
     }
 
-    if(!input.value.endsWith(x)){
-      hint.value = input.value + " " + x;
+    let ignorelist = []
+    if(checkedhclip != null){
+      ignorelist.push(checkedhclip.code)  
+      hintwith(checkedhclip.code, ignorelist)
+    }else{
+      hintwith(hclipboards.value[0].code, ignorelist)
     }
-    
   }).catch((reason)=>{
     console.log("read text error:"+reason);
   })
+}
+
+
+function clearCheckState() {
+  for (let i = 0; i < hclipboards.value.length; i++) {
+    hclipboards.value[i].checked = false;
+  }
 }
 
 document.onkeydown = function(e) {
@@ -247,10 +294,49 @@ document.onkeydown = function(e) {
         refTextarea.value.ref.setSelectionRange(9999,9999);
         return false;
       }else{
-        readText().then((x)=>{
-          input.value = input.value + " " +x;
-          oninputchange(input.value)
-        })
+        // checked first
+        let checkedhclip = null;
+        for (let i = 0; i < hclipboards.value.length; i++) {
+          const hclip = hclipboards.value[i];
+          if(hclip.checked){
+            checkedhclip = hclip;
+            break;
+          }
+        }
+        if(checkedhclip == null){
+          input.value = input.value +" " + hclipboards.value[0].code;
+          hclipboards.value[0].checked = true;
+          return false;
+        }
+        // switch next or fallback to first
+        let next = 0;
+        let found = null;
+        let foundi = -1;
+        for (let i = 0; i < hclipboards.value.length; i++) {
+          const hclip = hclipboards.value[i];
+          if(input.value.endsWith(hclip.code)){
+            next = i+1;
+            found = hclip;
+            foundi = i;
+            break;
+          }
+        }
+        if(next >= hclipboards.value.length){
+          next = 0;
+        }
+        if(found){
+          input.value = input.value.substring(0, input.value.indexOf(found.code)) + hclipboards.value[next].code;
+          clearCheckState()
+          found.checked = false;
+          hclipboards.value[next].checked = true;
+        }else if(hclipboards.value.length > 0){
+          input.value = input.value +" " + hclipboards.value[0].code;
+          clearCheckState()
+          hclipboards.value[next].checked =  true;
+        }else{
+          // do nothing
+        }
+        oninputchange(input.value)
         return false;
       }
     }
@@ -298,6 +384,7 @@ onMounted(() => {
   refInput.value.focus()
 })
 
+oninputchange("");
 setInterval(focuslast, 500);
 setInterval(stageclipboard, 1000);
 
@@ -308,10 +395,10 @@ setInterval(stageclipboard, 1000);
     <el-input ref="refHint" v-model="hint" input-style="color:#C0C0C0" style="background:transparent;z-index:0;margin-left:0;position:absolute;width:100%;margin-top:0px;color:#FF6633"/>
     <el-input ref="refInput" v-model="input" @input="oninputchange" @focus="oninputfocus" placeholder="" />
   </div>
-  <div hidden>
+  <div v-if="!showclipboard && input && hclipboards.length" style="text-align:left">
     <el-check-tag v-for="(item,index) in hclipboards" :item="item"
         :index="index"
-        :key="item.value" style="margin-right: 8px"
+        :key="item.code" style="margin-right: 8px;"
         :checked="item.checked" 
         @change="onChange(item)">{{item.text}}</el-check-tag>
   </div>

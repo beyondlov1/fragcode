@@ -134,7 +134,7 @@ fn selectall(conn: &Connection)->rusqlite::Result<Vec<FragCode>>{
 fn list(name: &str) ->String{
   let conn = connect();
   let v = listjson(&conn, name).unwrap();
-  conn.close();
+  conn.close().unwrap();
   v
 }
 
@@ -159,7 +159,7 @@ fn add(abbr: &str, code: &str){
   };
   let v = vec![fc];
   insert(&conn, &v).unwrap();
-  conn.close();
+  conn.close().unwrap();
 }
 
 
@@ -167,7 +167,7 @@ fn add(abbr: &str, code: &str){
 fn remove(id: i32){
   let conn = connect();
   delete(&conn, id).unwrap();
-  conn.close();
+  conn.close().unwrap();
 }
 
 #[tauri::command]
@@ -177,7 +177,7 @@ fn access(id: i32){
     "update t_frag_code set access_cnt = access_cnt + 1 where id = ?1",
     [id],
   ).unwrap();
-  conn.close();
+  conn.close().unwrap();
 }
 
 #[tauri::command]
@@ -242,7 +242,7 @@ fn handler(app: &AppHandle, event: SystemTrayEvent) {
 fn main() {
   let conn = connect();
   createtable(&conn).unwrap();
-  conn.close();
+  conn.close().unwrap();
 
 
   let traymenu = SystemTrayMenu::new()
