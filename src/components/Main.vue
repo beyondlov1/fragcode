@@ -8,6 +8,7 @@ import { register } from '@tauri-apps/api/globalShortcut';
 
 const input = ref('')
 const hint = ref('')
+const currhint = ref("")
 const tableData = ref([])
 const refInput =ref()
 const refTextarea =ref()
@@ -25,12 +26,14 @@ function hintwith(str, ignorelist) {
     if(input.value.endsWith(ignorestr)){
       let base = input.value.substring(0, input.value.indexOf(ignorestr));
       hint.value = base + str;
+      currhint.value = str;
       return;
     }else{
       break;
     }
   }
   hint.value = input.value + " " + str;
+  currhint.value = str;
 }
 
 function oninputchange(value){
@@ -52,12 +55,29 @@ function oninputchange(value){
     showclipboard.value = false;
   }
 
+  let wildcardkeyword = ''
+  for (let i = 0; i < keyword.length; i++) {
+    const c = keyword[i];
+    wildcardkeyword = wildcardkeyword+"%"+c
+  }
   console.log(keyword)
-  invoke('list', { name: keyword })
+  console.log(wildcardkeyword)
+  invoke('list', { name: wildcardkeyword })
     .then((response) => {
       let r = JSON.parse(response)
-      if(command != null && command.length > 2 && command[2].length > 0){
+      if(command != null && command.length > 2 && command[2].trim().length > 0){
         let args = command[2].trim().split(/\s+/)
+        for (let j = 0; j < r.length; j++) {
+          var item = r[j];
+          for (let i = 0; i < args.length; i++) {
+            const arg = args[i];
+            item["code"] = replace(item["code"], arg, i+1)
+          }
+        }
+      }
+      if(command != null && (command.length == 2 || (command.length == 3 && command[2].trim() == ""))){
+        console.log("currhint:"+currhint.value)
+        let args = [currhint.value]
         for (let j = 0; j < r.length; j++) {
           var item = r[j];
           for (let i = 0; i < args.length; i++) {
@@ -68,6 +88,8 @@ function oninputchange(value){
       }
       tableData.value = r;
       setCurrent(tableData.value[0]);
+    }).catch((reason)=>{
+      console.log("invoke list fail:"+reason)
     })
 
     if(keyword == "cp"){
@@ -78,7 +100,7 @@ function oninputchange(value){
       return;
     }
     if(value == ""){
-      hint.value = value + " " + hclipboards.value[0].code;
+      hintwith(hclipboards.value[0].code, []);
       return;
     }
 
