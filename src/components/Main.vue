@@ -377,6 +377,8 @@ document.onkeydown = function(e) {
       }
       let next = index+1>=tableData.value.length?tableData.value.length-1:index+1
       singleTableRef.value.setCurrentRow(tableData.value[next])
+      const tragetElemPostition = document.querySelector(".current-row").offsetTop;
+      window.scrollTo(0,tragetElemPostition);
       return false;
     }
     if(e.key == "ArrowUp"){
@@ -390,6 +392,8 @@ document.onkeydown = function(e) {
       }
       let next = index-1<0?0:index-1
       singleTableRef.value.setCurrentRow(tableData.value[next])
+      const tragetElemPostition = document.querySelector(".current-row").offsetTop;
+      window.scrollTo(0,tragetElemPostition);
       return false;
     }
   }
