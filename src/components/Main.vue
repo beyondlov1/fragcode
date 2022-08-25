@@ -12,12 +12,14 @@ const currhint = ref("")
 const tableData = ref([])
 const refInput =ref()
 const refTextarea =ref()
+const refEdit =ref()
 const singleTableRef = ref()
 const currentRow = ref()
 const lastfocus = ref(null)
 const showclipboard = ref(false)
 const clipboard = ref("")
 const hclipboards = ref([])
+const editing = ref(false)
 
 
 function hintwith(str, ignorelist) {
@@ -65,6 +67,10 @@ function oninputchange(value){
   invoke('list', { name: wildcardkeyword })
     .then((response) => {
       let r = JSON.parse(response)
+      for (let i = 0; i < r.length; i++) {
+        const item = r[i];
+        item["ocode"] = item["code"]
+      }
       if(command != null && command.length > 2 && command[2].trim().length > 0){
         let args = command[2].trim().split(/\s+/)
         for (let j = 0; j < r.length; j++) {
@@ -166,10 +172,12 @@ function onenter(value){
 }
 
 function reset(){
+  editing.value = {on:false}
   input.value = ""
   oninputchange("")
   lastfocus.value = refInput.value
-  refInput.value.focus()
+  if(refInput.value)
+    refInput.value.focus()
   clearCheckState()
 }
 
@@ -193,6 +201,19 @@ function remove(row){
   reset()
 }
 
+function showedit(row){
+  editing.value = {on:true, id: row.id, code: row.code, ocode: row.ocode, abbr: row.abbr}
+}
+
+function edit() {
+  if(!editing.value.on){
+    return;
+  }
+  let row = editing.value
+  invoke("update", {id: row.id, code: row.ocode, abbr: row.abbr});
+  editing.value = {on:false}
+}
+
 const setCurrent = (row) => {
   if(row){
     singleTableRef.value.setCurrentRow(row)
@@ -203,11 +224,18 @@ const handleCurrentChange = (val) => {
 }
 
 function focuslast(){
+  if(editing.value.on){
+    refEdit.value.focus()
+    return;
+  }
   if(lastfocus.value == null){
     refInput.value.focus();
+    lastfocus.value = refInput.value
   }
-  if(lastfocus.value != null &&  refTextarea && refTextarea.value != null 
-    && lastfocus.value == refTextarea.value && !showclipboard.value){
+  if(lastfocus && lastfocus.value != null 
+    && refTextarea && refTextarea.value != null 
+    && lastfocus.value == refTextarea.value 
+    && !showclipboard.value){
     refInput.value.focus();
     lastfocus.value = refInput.value;
     return;
@@ -224,6 +252,10 @@ function oninputfocus(event){
 
 function ontextareafocus(event){
   lastfocus.value = refTextarea.value
+}
+
+function oneditfocus(event){
+  lastfocus.value = refEdit.value
 }
 
 const onChange = (item) => {
@@ -300,16 +332,15 @@ function clearCheckState() {
 }
 
 document.onkeydown = function(e) {
-  if (e.key == "Escape" || (e.ctrlKey && e.key == "c")) {
-    invoke("toggle")
-    reset()
-    return false;
-  }
+
   console.log(e.key)
-  if(refInput.value.ref == e.target ){
+  if(refInput.value && refInput.value.ref && refInput.value.ref == e.target ){
     if(e.ctrlKey && e.key == "z") {
       input.value = ""
       oninputchange(input.value)
+    }
+    if(e.ctrlKey && e.key == "e") {
+      showedit(currentRow.value)
     }
     if(e.key == "Enter"){
       onenter(input.value)
@@ -401,7 +432,27 @@ document.onkeydown = function(e) {
     if(e.ctrlKey && e.key == "Enter"){
       onenter(input.value)
       reset()
+      return false;
     }
+  }
+
+  if(refEdit && refEdit.value && refEdit.value.ref == e.target ){
+    if(e.ctrlKey && e.key == "Enter"){
+      edit()
+      reset()
+      return false;
+    }
+    if(e.key == "Escape"){
+      editing.value = {on:false}
+      lastfocus.value = refInput.value
+      return false;
+    }
+  }
+
+  if (e.key == "Escape" || (e.ctrlKey && e.key == "c")) {
+    invoke("toggle")
+    reset()
+    return false;
   }
 }
 
@@ -421,36 +472,44 @@ setInterval(stageclipboard, 1000);
 </script>
 
 <template>
-  <div>
+  <div v-if="!editing.on">
     <el-input ref="refHint" v-model="hint" input-style="color:#C0C0C0" style="background:transparent;z-index:0;margin-left:0;position:absolute;width:100%;margin-top:0px;color:#FF6633"/>
     <el-input ref="refInput" v-model="input" @input="oninputchange" @focus="oninputfocus" placeholder="" />
   </div>
-  <div v-if="!showclipboard && input && hclipboards.length" style="text-align:left">
-    <el-check-tag v-for="(item,index) in hclipboards" :item="item"
-        :index="index"
-        :key="item.code" style="margin-right: 8px;"
-        :checked="item.checked" 
-        @change="onChange(item)">{{item.text}}</el-check-tag>
+  <el-input v-if="editing.on" v-model="editing.ocode" ref="refEdit" type="textarea" 
+   rows="35" @focus="oneditfocus" placeholder="Edit" />
+  <div v-if="!editing.on">
+    <div v-if="!showclipboard && input && hclipboards.length" style="text-align:left">
+      <el-check-tag v-for="(item,index) in hclipboards" :item="item"
+          :index="index"
+          :key="item.code" style="margin-right: 8px;"
+          :checked="item.checked" 
+          @change="onChange(item)">{{item.text}}</el-check-tag>
+    </div>
+    <el-input v-if="showclipboard" v-model="clipboard" ref="refTextarea" type="textarea" 
+    rows="35" @focus="ontextareafocus" placeholder="Clipboard" />
+    <el-table v-if="!showclipboard && !input && hclipboards.length" :data="hclipboards"  :show-header=false style="width: 100%" @cell-click="onrowclick"
+        highlight-current-row >
+      <el-table-column prop="tabletext" label="Code"/>
+    </el-table>
+    <el-table v-if="!showclipboard" :data="tableData" :show-header=false style="width: 100%" @cell-click="onrowclick"
+        highlight-current-row  ref="singleTableRef" 
+        @current-change="handleCurrentChange">
+      <el-table-column prop="abbr" label="Abbr." width="100" />
+      <el-table-column prop="code" label="Code"/>
+      <el-table-column width="100">
+        <template v-slot:default="{row}">
+          <el-link type="primary" @click.stop="showedit(row)" >
+            <span>编辑</span>
+          </el-link>
+          &nbsp;
+          <el-link type="primary" @click.stop="remove(row)" >
+            <span>删除</span>
+          </el-link>
+        </template>
+      </el-table-column>
+    </el-table>
   </div>
-  <el-input v-if="showclipboard" v-model="clipboard" ref="refTextarea" type="textarea" 
-   rows="30" @focus="ontextareafocus" placeholder="Clipboard" />
-  <el-table v-if="!showclipboard && !input && hclipboards.length" :data="hclipboards"  :show-header=false style="width: 100%" @cell-click="onrowclick"
-  	  highlight-current-row >
-    <el-table-column prop="tabletext" label="Code"/>
-  </el-table>
-  <el-table v-if="!showclipboard" :data="tableData" :show-header=false style="width: 100%" @cell-click="onrowclick"
-  	  highlight-current-row  ref="singleTableRef" 
-      @current-change="handleCurrentChange">
-    <el-table-column prop="abbr" label="Abbr." width="100" />
-    <el-table-column prop="code" label="Code"/>
-    <el-table-column width="100">
-      <template v-slot:default="{row}">
-        <el-link type="primary" @click.stop="remove(row)" >
-          <span>删除</span>
-        </el-link>
-      </template>
-    </el-table-column>
-  </el-table>
 </template>
 
 

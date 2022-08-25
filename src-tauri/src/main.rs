@@ -181,6 +181,16 @@ fn access(id: i32){
 }
 
 #[tauri::command]
+fn update(id: i32, abbr: &str, code: &str){
+  let conn = connect();
+  conn.execute(
+    "update t_frag_code set abbr = ?1, code = ?2 where id = ?3",
+    [abbr, code, &id.to_string()],
+  ).unwrap();
+  conn.close().unwrap();
+}
+
+#[tauri::command]
 fn toggle(app: AppHandle){
   let window = app.get_window("main").unwrap();
   if window.is_visible().unwrap(){
@@ -254,7 +264,7 @@ fn main() {
   tauri::Builder::default()
     .system_tray(SystemTray::new().with_menu(traymenu))
     .on_system_tray_event(handler)
-    .invoke_handler(tauri::generate_handler![list, add, remove, toggle, access])
+    .invoke_handler(tauri::generate_handler![list, add, remove, toggle, access, update])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
