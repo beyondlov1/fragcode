@@ -67,6 +67,8 @@ function oninputchange(value){
   invoke('list', { name: wildcardkeyword })
     .then((response) => {
       let r = JSON.parse(response)
+
+      //list
       for (let i = 0; i < r.length; i++) {
         const item = r[i];
         item["ocode"] = item["code"]
@@ -94,6 +96,26 @@ function oninputchange(value){
       }
       tableData.value = r;
       setCurrent(tableData.value[0]);
+      //list end
+
+      // regexmatch
+      if(r.length > 0 && hclipboards.value.length > 1){
+        let id = r[0]["id"];
+        let candidates = []
+        for (let i = 0; i < hclipboards.value.length; i++) {
+          const hclip = hclipboards.value[i];
+          candidates.push(hclip["code"])
+        }
+        invoke("rmatch",{id:id,candidates: candidates}).then((resp)=>{
+          console.log("rmatch"+resp);
+          if(resp[0]>=0){
+            // fixme
+            currhint.value = resp[1]
+            hintwith(currhint.value, [])
+          }
+        })
+      }
+      // regexmatch end 
     }).catch((reason)=>{
       console.log("invoke list fail:"+reason)
     })
@@ -166,6 +188,15 @@ function onenter(value){
   if(selectedRow != null){
     writeText(selectedRow["code"]);
     invoke("access", {id:selectedRow["id"]})
+    let arg;
+    var command = value.match(/(\w+)(.*)/)
+    if(command != null && (command.length == 2 || (command.length == 3 && command[2].trim() == ""))){
+      arg = currhint.value
+    }else if(command2 != null){
+      arg = command2[2]
+    }
+    console.log("arg:"+arg)
+    invoke("train", {id:selectedRow["id"], arg: arg})
     reset()
     invoke("toggle")
   }

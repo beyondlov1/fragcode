@@ -11,7 +11,7 @@ use rusqlite::{ Connection};
 use std::path::{Path, PathBuf};
 use std::fs;
 use tauri::{SystemTray,SystemTrayMenu, SystemTraySubmenu,SystemTrayEvent, SystemTrayMenuItem, CustomMenuItem,AppHandle,Manager,GlobalShortcutManager};
-
+use std::fs::File;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct FragCode {
@@ -181,6 +181,63 @@ fn access(id: i32){
 }
 
 #[tauri::command]
+fn train(id:i32, arg: &str){
+  let home = dirs::home_dir().unwrap();
+  let mut dir = PathBuf::from(home);
+  dir.push(".fragcode");
+  dir.push("train");
+  let mut pathbuf = PathBuf::from(&dir);
+  pathbuf.push(format!("{}.tree", id));
+  if !&dir.as_path().exists(){
+    fs::create_dir_all(&dir).unwrap();
+  }
+  let path = pathbuf.as_path();
+  let mut file:File;
+  let mut root:regxtrie::TrieNode;
+  if !&path.exists(){
+    file = File::create(&path).unwrap();
+    root = regxtrie::TrieNode::newc("".to_string());
+  }else{
+    file = File::open(&path).unwrap();
+    root = regxtrie::TrieNode::fromjson(&fs::read_to_string(&path).unwrap()).unwrap();
+  }
+  root.insert(arg);
+  root.prune(10);
+  root.merge();
+  let content:String = regxtrie::TrieNode::tojson(&root).unwrap();
+  fs::write(&path, content.as_bytes());
+}
+
+#[tauri::command]
+fn rmatch(id:i32, candidates: Vec<String>) -> (i32,String){
+  let home = dirs::home_dir().unwrap();
+  let mut dir = PathBuf::from(home);
+  dir.push(".fragcode");
+  dir.push("train");
+  let mut pathbuf = PathBuf::from(&dir);
+  pathbuf.push(format!("{}.tree", id));
+  if !&dir.as_path().exists(){
+    fs::create_dir_all(&dir).unwrap();
+  }
+  let path = pathbuf.as_path();
+  let mut file:File;
+  let mut root:regxtrie::TrieNode;
+  if !&path.exists(){
+    file = File::create(&path).unwrap();
+    root = regxtrie::TrieNode::newc("".to_string());
+  }else{
+    file = File::open(&path).unwrap();
+    root = regxtrie::TrieNode::fromjson(&fs::read_to_string(&path).unwrap()).unwrap();
+  }
+  for (i, s) in candidates.iter().enumerate(){
+    if regxtrie::ismatch(&root, s){
+      return (i as i32,String::from(s));
+    }
+  }
+  (-1,"".to_string())
+}
+
+#[tauri::command]
 fn update(id: i32, abbr: &str, code: &str){
   let conn = connect();
   conn.execute(
@@ -264,7 +321,7 @@ fn main() {
   tauri::Builder::default()
     .system_tray(SystemTray::new().with_menu(traymenu))
     .on_system_tray_event(handler)
-    .invoke_handler(tauri::generate_handler![list, add, remove, toggle, access, update])
+    .invoke_handler(tauri::generate_handler![list, add, remove, toggle, access, update, train, rmatch])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
