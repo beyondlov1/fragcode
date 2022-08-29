@@ -182,6 +182,9 @@ fn access(id: i32){
 
 #[tauri::command]
 fn train(id:i32, arg: &str){
+  if arg.len() > 100{
+    return;
+  }
   let home = dirs::home_dir().unwrap();
   let mut dir = PathBuf::from(home);
   dir.push(".fragcode");
@@ -220,13 +223,11 @@ fn rmatch(id:i32, candidates: Vec<String>) -> (i32,String){
     fs::create_dir_all(&dir).unwrap();
   }
   let path = pathbuf.as_path();
-  let mut file:File;
   let mut root:regxtrie::TrieNode;
   if !&path.exists(){
-    file = File::create(&path).unwrap();
     root = regxtrie::TrieNode::newc("".to_string());
   }else{
-    file = File::open(&path).unwrap();
+    let file = File::open(&path).unwrap();
     root = regxtrie::TrieNode::fromjson(&fs::read_to_string(&path).unwrap()).unwrap();
   }
   for (i, s) in candidates.iter().enumerate(){

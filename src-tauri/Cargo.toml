@@ -22,6 +22,8 @@ tauri = { version = "1.0.5", features = ["api-all", "system-tray"] }
 rusqlite = { version = "0.28.0", features = ["bundled"] }
 lazy_static = "1.4.0"
 dirs = "4.0.0"
+regxtrie = {git = "https://github.com/beyondlov1/regxtrie", branch="master"}
+
 
 [features]
 # by default Tauri runs in production mode
@@ -30,3 +32,10 @@ default = [ "custom-protocol" ]
 # this feature is used used for production builds where `devPath` points to the filesystem
 # DO NOT remove this
 custom-protocol = [ "tauri/custom-protocol" ]
+
+[patch.crates-io]
+tauri = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }
+tao = { git = "https://github.com/tauri-apps/tao", branch = "dev" }
+
+[net]
+git-fetch-with-cli = true

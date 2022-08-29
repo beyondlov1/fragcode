@@ -53,6 +53,7 @@ function oninputchange(value){
         clipboard.value = value
     })
     showclipboard.value = true;
+    return;
   }else{
     showclipboard.value = false;
   }
@@ -73,83 +74,93 @@ function oninputchange(value){
         const item = r[i];
         item["ocode"] = item["code"]
       }
-      if(command != null && command.length > 2 && command[2].trim().length > 0){
-        let args = command[2].trim().split(/\s+/)
-        for (let j = 0; j < r.length; j++) {
-          var item = r[j];
-          for (let i = 0; i < args.length; i++) {
-            const arg = args[i];
-            item["code"] = replace(item["code"], arg, i+1)
-          }
-        }
-      }
-      if(command != null && (command.length == 2 || (command.length == 3 && command[2].trim() == ""))){
-        console.log("currhint:"+currhint.value)
-        let args = [currhint.value]
-        for (let j = 0; j < r.length; j++) {
-          var item = r[j];
-          for (let i = 0; i < args.length; i++) {
-            const arg = args[i];
-            item["code"] = replace(item["code"], arg, i+1)
-          }
-        }
-      }
       tableData.value = r;
       setCurrent(tableData.value[0]);
       //list end
 
+      return tableData.value;
+    })
+    .then((r)=>{
+      if(keyword == "cp" || keyword == "add"){
+        hint.value = ""
+        return;
+      }
       // regexmatch
-      if(r.length > 0 && hclipboards.value.length > 1){
+      if(r.length > 0 && hclipboards.value.length > 0){
         let id = r[0]["id"];
-        let candidates = []
-        for (let i = 0; i < hclipboards.value.length; i++) {
-          const hclip = hclipboards.value[i];
-          candidates.push(hclip["code"])
-        }
-        invoke("rmatch",{id:id,candidates: candidates}).then((resp)=>{
-          console.log("rmatch"+resp);
-          if(resp[0]>=0){
-            // fixme
-            currhint.value = resp[1]
-            hintwith(currhint.value, [])
-          }
+        smarthint(id).then(()=>{
+          replaceplaceholder(r[0])
         })
       }
       // regexmatch end 
-    }).catch((reason)=>{
+    })
+    .catch((reason)=>{
       console.log("invoke list fail:"+reason)
     })
+}
 
-    if(keyword == "cp"){
-      hint.value = ""
-      return;
+function replaceplaceholder(item) {
+  if(!item){
+    return;
+  }
+  var command = input.value.match(/(\w+)(.*)/)
+  if(command != null && command.length > 2 && command[2].trim().length > 0){
+    let args = command[2].trim().split(/\s+/)
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      item["code"] = replace(item["ocode"], arg, i+1)
     }
-    if(hclipboards.value.length <= 0){
-      return;
+  }
+  if(command != null && (command.length == 2 || (command.length == 3 && command[2].trim() == ""))){
+    console.log("currhint:"+currhint.value)
+    let args = [currhint.value]
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+      item["code"] = replace(item["ocode"], arg, i+1)
     }
-    if(value == ""){
-      hintwith(hclipboards.value[0].code, []);
-      return;
-    }
+  }
+}
 
-    // hint with typing
-    let checkedhclip = null;
-    for (let i = 0; i < hclipboards.value.length; i++) {
-      const hclip = hclipboards.value[i];
-      if(hclip.checked){
-        checkedhclip = hclip;
-        break;
+async function smarthint(id) {
+  let candidates = []
+  for (let i = 0; i < hclipboards.value.length; i++) {
+    const hclip = hclipboards.value[i];
+    candidates.push(hclip["code"])
+  }
+  await invoke("rmatch",{id:id,candidates: candidates}).then((resp)=>{
+    console.log("rmatch"+resp);
+    if(resp[0]>=0){
+      currhint.value = resp[1]
+      hintwith(currhint.value, [])
+    }else{
+      
+      if(hclipboards.value.length <= 0){
+        return;
+      }
+      if(input.value == ""){
+        hintwith(hclipboards.value[0].code, []);
+        return;
+      }
+
+      // hint with typing
+      let checkedhclip = null;
+      for (let i = 0; i < hclipboards.value.length; i++) {
+        const hclip = hclipboards.value[i];
+        if(hclip.checked){
+          checkedhclip = hclip;
+          break;
+        }
+      }
+
+      let ignorelist = []
+      if(checkedhclip != null){
+        ignorelist.push(checkedhclip.code)  
+        hintwith(checkedhclip.code, ignorelist)
+      }else{
+        hintwith(hclipboards.value[0].code, ignorelist)
       }
     }
-
-    let ignorelist = []
-    if(checkedhclip != null){
-      ignorelist.push(checkedhclip.code)  
-      hintwith(checkedhclip.code, ignorelist)
-    }else{
-      hintwith(hclipboards.value[0].code, ignorelist)
-    }
-    
+  })
 }
 
 function replace(str, arg, argi){
@@ -334,22 +345,22 @@ function stageclipboard() {
       hclipboards.value.pop();
     }
 
-    let checkedhclip = null;
-    for (let i = 0; i < hclipboards.value.length; i++) {
-      const item = hclipboards.value[i];
-      if(item.checked){
-        checkedhclip = item;
-        break;
-      }
-    }
+    // let checkedhclip = null;
+    // for (let i = 0; i < hclipboards.value.length; i++) {
+    //   const item = hclipboards.value[i];
+    //   if(item.checked){
+    //     checkedhclip = item;
+    //     break;
+    //   }
+    // }
 
-    let ignorelist = []
-    if(checkedhclip != null){
-      ignorelist.push(checkedhclip.code)  
-      hintwith(checkedhclip.code, ignorelist)
-    }else{
-      hintwith(hclipboards.value[0].code, ignorelist)
-    }
+    // let ignorelist = []
+    // if(checkedhclip != null){
+    //   ignorelist.push(checkedhclip.code)  
+    //   hintwith(checkedhclip.code, ignorelist)
+    // }else{
+    //   // 如果没有checked, 不定时hint
+    // }
   }).catch((reason)=>{
     console.log("read text error:"+reason);
   })
@@ -394,6 +405,7 @@ document.onkeydown = function(e) {
         if(checkedhclip == null){
           input.value = input.value +" " + hclipboards.value[0].code;
           hclipboards.value[0].checked = true;
+          hint.value = input.value;
           return false;
         }
         // switch next or fallback to first
@@ -424,7 +436,16 @@ document.onkeydown = function(e) {
         }else{
           // do nothing
         }
-        oninputchange(input.value)
+        let currentItemIndex = 0;
+        for (let i = 0; i < tableData.value.length; i++) {
+          const item = tableData.value[i];
+          if(item["id"] == currentRow.value["id"]){
+            currentItemIndex = i;
+            break;
+          }
+        }
+        replaceplaceholder(tableData.value[currentItemIndex])
+        hint.value = input.value;
         return false;
       }
     }
@@ -441,6 +462,12 @@ document.onkeydown = function(e) {
       singleTableRef.value.setCurrentRow(tableData.value[next])
       const tragetElemPostition = document.querySelector(".current-row").offsetTop;
       window.scrollTo(0,tragetElemPostition);
+      smarthint(tableData.value[next]["id"]).then(()=>{
+        tableData.value.forEach(item => {
+          item["code"] = item["ocode"]
+        });
+        replaceplaceholder(tableData.value[next])
+      })
       return false;
     }
     if(e.key == "ArrowUp"){
@@ -456,6 +483,12 @@ document.onkeydown = function(e) {
       singleTableRef.value.setCurrentRow(tableData.value[next])
       const tragetElemPostition = document.querySelector(".current-row").offsetTop;
       window.scrollTo(0,tragetElemPostition);
+      smarthint(tableData.value[next]["id"]).then(()=>{
+        tableData.value.forEach(item => {
+          item["code"] = item["ocode"]
+        });
+        replaceplaceholder(tableData.value[next])
+      })
       return false;
     }
   }
