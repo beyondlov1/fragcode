@@ -20,14 +20,14 @@ struct FragCode {
     code: String,
 }
 
-#[derive(Debug)]
-struct TableField {
-    id: i32,
-    table_name: String,
-    field_name: String,
-    field_type: i32,
-    field_default: String,
-}
+// #[derive(Debug)]
+// struct TableField {
+//     id: i32,
+//     table_name: String,
+//     field_name: String,
+//     field_type: i32,
+//     field_default: String,
+// }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Count {
@@ -195,20 +195,17 @@ fn train(id:i32, arg: &str){
     fs::create_dir_all(&dir).unwrap();
   }
   let path = pathbuf.as_path();
-  let mut file:File;
   let mut root:regxtrie::TrieNode;
-  if !&path.exists(){
-    file = File::create(&path).unwrap();
+  if !&path.exists(){ File::create(&path).unwrap();
     root = regxtrie::TrieNode::newc("".to_string());
   }else{
-    file = File::open(&path).unwrap();
     root = regxtrie::TrieNode::fromjson(&fs::read_to_string(&path).unwrap()).unwrap();
   }
   root.insert(arg);
   root.prune(10);
   root.merge();
   let content:String = regxtrie::TrieNode::tojson(&root).unwrap();
-  fs::write(&path, content.as_bytes());
+  fs::write(&path, content.as_bytes()).unwrap();
 }
 
 #[tauri::command]
@@ -223,11 +220,10 @@ fn rmatch(id:i32, candidates: Vec<String>) -> (i32,String){
     fs::create_dir_all(&dir).unwrap();
   }
   let path = pathbuf.as_path();
-  let mut root:regxtrie::TrieNode;
+  let root:regxtrie::TrieNode;
   if !&path.exists(){
     root = regxtrie::TrieNode::newc("".to_string());
   }else{
-    let file = File::open(&path).unwrap();
     root = regxtrie::TrieNode::fromjson(&fs::read_to_string(&path).unwrap()).unwrap();
   }
   for (i, s) in candidates.iter().enumerate(){
