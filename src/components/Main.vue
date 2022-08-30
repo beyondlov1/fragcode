@@ -211,7 +211,9 @@ function onenter(value){
       arg = command2[2]
     }
     console.log("arg:"+arg)
-    invoke("train", {id:selectedRow["id"], arg: arg})
+    if(arg){
+      invoke("train", {id:selectedRow["id"], arg: arg})
+    }
     reset()
     invoke("toggle")
   }
