@@ -85,6 +85,10 @@ function oninputchange(value){
         hint.value = ""
         return;
       }
+      if(r.length == 0){
+        hintwith(hclipboards.value[0].code, []);
+        return;
+      }
       // regexmatch
       if(r.length > 0 && hclipboards.value.length > 0){
         let id = r[0]["id"];
