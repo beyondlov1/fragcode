@@ -95,6 +95,8 @@ function oninputchange(value){
         smarthint(id).then(()=>{
           replaceplaceholder(r[0])
         })
+      }else if(r.length > 0 && hclipboards.value.length == 0 && command.length > 2){
+        replaceplaceholder(r[0])
       }
       // regexmatch end 
     })
