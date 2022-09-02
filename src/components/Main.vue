@@ -53,6 +53,7 @@ function oninputchange(value){
         clipboard.value = value
     })
     showclipboard.value = true;
+    hint.value = ""
     return;
   }else{
     showclipboard.value = false;
