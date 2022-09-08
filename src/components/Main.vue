@@ -196,6 +196,16 @@ function onenter(value){
       })
     return;
   }
+  if(command2 != null && command2[1] == "todo"){
+    invoke('add', { abbr: "todo", code: command2[2] });
+    invoke('list', { name: "todo" })
+      .then((response) => {
+        tableData.value = JSON.parse(response);
+        input.value = "todo";
+        showclipboard.value = false;
+      })
+    return;
+  }
 
   let selectedRow = null;
   if(currentRow.value){
@@ -223,9 +233,13 @@ function onenter(value){
 }
 
 function reset(){
+  resetv("")
+}
+
+function resetv(inputval){
   editing.value = {on:false}
-  input.value = ""
-  oninputchange("")
+  input.value = inputval
+  oninputchange(inputval)
   lastfocus.value = refInput.value
   if(refInput.value)
     refInput.value.focus()
@@ -249,7 +263,7 @@ function onrowclick(row, column, event){
 function remove(row){
   console.log("row"+row.id)
   invoke('remove', { id: row.id});
-  reset()
+  resetv(input.value)
 }
 
 function showedit(row){
