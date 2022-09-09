@@ -185,9 +185,9 @@ function onenter(value){
       })
     return;
   }
-  let command2 = value.match(/(\w+)\s+(\w+)\s?(.*)/)
-  if(command2 != null && command2[1] == "cp"){
-    invoke('add', { abbr: command2[2], code: clipboard.value });
+  let command2or3 = value.match(/(\w+)\s+(\w+)\s?(.*)/)
+  if(command2or3 != null && command2or3[1] == "cp"){
+    invoke('add', { abbr: command2or3[2], code: clipboard.value });
     invoke('list', { name: "" })
       .then((response) => {
         tableData.value = JSON.parse(response);
@@ -196,6 +196,7 @@ function onenter(value){
       })
     return;
   }
+  let command2 = value.match(/(\w+)\s+(.*)/)
   if(command2 != null && command2[1] == "todo"){
     invoke('add', { abbr: "todo", code: command2[2] });
     invoke('list', { name: "todo" })
@@ -220,8 +221,8 @@ function onenter(value){
     var command = value.match(/(\w+)(.*)/)
     if(command != null && (command.length == 2 || (command.length == 3 && command[2].trim() == ""))){
       arg = currhint.value
-    }else if(command2 != null){
-      arg = command2[2]
+    }else if(command2or3 != null){
+      arg = command2or3[2]
     }
     console.log("arg:"+arg)
     if(arg){
