@@ -316,6 +316,9 @@ fn main() {
   .add_item(CustomMenuItem::new("quit".to_string(), "Quit"));
 
   tauri::Builder::default()
+    .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+      println!("{}, {argv:?}, {cwd}", app.package_info().name);
+    }))
     .system_tray(SystemTray::new().with_menu(traymenu))
     .on_system_tray_event(handler)
     .invoke_handler(tauri::generate_handler![list, add, remove, toggle, access, update, train, rmatch])
