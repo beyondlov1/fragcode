@@ -61,6 +61,9 @@ fg CLIPBOARD_TEXT
 
 ## build
 ```
+# Can't detect any appindicator library (ubuntu 22.04)
+sudo apt-get install libayatana-appindicator3-dev
+
 npm run tauri build
 ```
 
