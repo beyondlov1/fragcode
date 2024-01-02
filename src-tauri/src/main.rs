@@ -224,7 +224,9 @@ fn rmatch(id:i32, candidates: Vec<String>) -> (i32,String){
   if !&path.exists(){
     root = regxtrie::TrieNode::newc("".to_string());
   }else{
-    root = regxtrie::TrieNode::fromjson(&fs::read_to_string(&path).unwrap()).unwrap();
+    root = regxtrie::TrieNode::newc("".to_string());
+    // tofix  bug
+    //root = regxtrie::TrieNode::fromjson(&fs::read_to_string(&path).unwrap()).unwrap();
   }
   for (i, s) in candidates.iter().enumerate(){
     if regxtrie::ismatch(&root, s){

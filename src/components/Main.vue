@@ -225,9 +225,9 @@ function onenter(value){
       arg = command2or3[2]
     }
     console.log("arg:"+arg)
-    if(arg){
-      invoke("train", {id:selectedRow["id"], arg: arg})
-    }
+    /*if(arg){*/
+      /*invoke("train", {id:selectedRow["id"], arg: arg})*/
+    /*}*/
     reset()
     invoke("toggle")
   }
@@ -544,7 +544,7 @@ document.onkeydown = function(e) {
   }
 }
 
-register('Ctrl+Space', () => {
+register('Alt+Space', () => {
   invoke("toggle")
   oninputchange(input.value)
 });
